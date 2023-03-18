@@ -97,6 +97,37 @@ def ratio(
     if use_tqdm:
         prog_bar.close()
 
+def customratio(
+    input,
+    output="output",
+    seed=1337,
+    ratio=(0.8, 0.1, 0.1),
+    group_prefix=None,
+    move=False,
+):
+    if not round(sum(ratio), 5) == 1:  # round for floating imprecision
+        raise ValueError("The sums of `ratio` is over 1.")
+    if not len(ratio) in (2, 3):
+        raise ValueError("`ratio` should")
+
+#    check_input_format(input)
+
+    if use_tqdm:
+        prog_bar = tqdm(desc=f"Split dataset", unit=" files")
+
+    split_class_dir_ratio(
+        input,
+        output,
+        ratio,
+        seed,
+        prog_bar if use_tqdm else None,
+        group_prefix,
+        move,
+    )
+
+    if use_tqdm:
+        prog_bar.close()
+
 
 def fixed(
     input,
@@ -309,6 +340,15 @@ def copy_files(files_type, class_dir, output, prog_bar, move):
                 prog_bar.update()
             if type(f) == tuple:
                 for x in f:
-                    copy_fun(str(x), str(full_path))
+                    print("Not yet implemented!")
             else:
+                # copy images and labels
                 copy_fun(str(f), str(full_path))
+                label_path = str(f).replace("images", "labels").replace(".png", ".txt")
+                
+                # label files do not exists if no objects are in the image
+                if Path(label_path).is_file():
+                    label_out_path = str(full_path).replace("images", "labels/").replace("\\", "/")
+                    Path(label_out_path).mkdir(parents=True, exist_ok=True)                    
+                    label_out_path += str(f).split("\\")[-1].replace(".png", ".txt")
+                    copy_fun(label_path, label_out_path)
